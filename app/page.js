@@ -1,95 +1,60 @@
-import Image from 'next/image'
-import styles from './page.module.css'
+import Image from "next/image";
+import styles from "./page.module.css";
+import Pagination from "./components/Pagination";
 
-export default function Home() {
-  return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+async function getCount() {
+	const response = await fetch("http://localhost:3000/api/product-count", {
+		method: "GET",
+	});
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+	if (!response.ok) {
+		return 0;
+	}
 
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
+	const responseJson = await response.json();
+	console.log(responseJson.productsCount);
+	return responseJson.productsCount;
+}
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
+async function getProducts(searchParams) {
+	const { page } = searchParams;
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore the Next.js 13 playground.</p>
-        </a>
+	const pageParam = page ? `&page=${page}` : "";
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
+	const response = await fetch(`http://localhost:3000/api?${pageParam}`, {
+		method: "GET",
+	});
+
+	if (!response.ok) {
+		return [];
+	}
+
+	const responseJson = await response.json();
+	console.log(responseJson.products.length);
+	return responseJson.products;
+}
+
+export default async function Home(props) {
+	const products = await getProducts(props.searchParams);
+	const productsCount = await getCount();
+
+	return (
+		<div className={styles.container}>
+			<div className={styles.header}>
+				<p>Pagination</p>
+			</div>
+			<div className={styles.content}>
+				{products.map((product, index) => (
+					<div key={index} className={styles.item}>
+						<Image
+							fill
+							src={`http://unsplash.it/200/200?random&sig=${product._id}`}
+							alt={product.title}
+						/>
+					</div>
+				))}
+			</div>
+			<Pagination products={productsCount} />
+		</div>
+	);
 }
